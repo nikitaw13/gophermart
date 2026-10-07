@@ -9,8 +9,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const secretKey = "TEST"
-
 func TestJWTManager_IssueToken(t *testing.T) {
 	type fields struct {
 		secretKey string

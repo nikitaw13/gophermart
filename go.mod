@@ -1,6 +1,6 @@
 module github.com/nikitaw13/gophermart
 
-go 1.27.1
+go 1.26.0
 
 require (
 	github.com/go-chi/chi v1.5.5
