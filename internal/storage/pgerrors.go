@@ -46,7 +46,7 @@ func ClassifyPgError(pgErr *pgconn.PgError) PostgresErrorClassification {
 	// PostgreSQL error codes: https://www.postgresql.org/docs/current/errcodes-appendix.html
 
 	switch pgErr.Code {
-	// Class 08 — connection exception.
+	// Class 08 — connection exception (Retriable).
 	case pgerrcode.ConnectionException,
 		pgerrcode.ConnectionDoesNotExist,
 		pgerrcode.ConnectionFailure:
@@ -63,27 +63,16 @@ func ClassifyPgError(pgErr *pgconn.PgError) PostgresErrorClassification {
 		return Retriable
 	}
 
-	switch pgErr.Code {
 	// Class 22 — data exception.
-	case pgerrcode.DataException,
-		pgerrcode.NullValueNotAllowedDataException:
+	if pgerrcode.IsDataException(pgErr.Code) {
 		return NonRetriable
-
+	}
 	// Class 23 — integrity constraint violation.
-	case pgerrcode.IntegrityConstraintViolation,
-		pgerrcode.RestrictViolation,
-		pgerrcode.NotNullViolation,
-		pgerrcode.ForeignKeyViolation,
-		pgerrcode.UniqueViolation,
-		pgerrcode.CheckViolation:
+	if pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) {
 		return NonRetriable
-
-	// Class 42 — syntax error or access rule violation.
-	case pgerrcode.SyntaxErrorOrAccessRuleViolation,
-		pgerrcode.SyntaxError,
-		pgerrcode.UndefinedColumn,
-		pgerrcode.UndefinedTable,
-		pgerrcode.UndefinedFunction:
+	}
+	// Class 42 — syntax error or access rule violation
+	if pgerrcode.IsSyntaxErrororAccessRuleViolation(pgErr.Code) {
 		return NonRetriable
 	}
 
