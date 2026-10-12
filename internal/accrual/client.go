@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
 )
+
+const maxRetryWaitSeconds = 60
 
 // accrualClient talks to the loyalty accrual system over HTTP.
 type accrualClient struct {
@@ -30,53 +32,58 @@ func NewAccrualClient(address string, logger *zap.Logger) *accrualClient {
 }
 
 // GetStatus fetches the current accrual status of the order with the given number.
-func (ac *accrualClient) GetStatus(ctx context.Context, orderNumber string) (accrualOrder, error) {
-	var result accrualOrder
+func (ac *accrualClient) GetStatus(ctx context.Context, orderNumber string) (Order, error) {
+	var result Order
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/orders/%s", ac.address, orderNumber), nil)
 
 	if err != nil {
-		ac.logger.Error("error wrapping HTTP request", zap.Error(err))
 		return result, err
 	}
 
 	response, err := ac.client.Do(request)
 	if err != nil {
-		ac.logger.Error("error sending HTTP request", zap.Error(err))
 		return result, err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusOK {
-		body, err := io.ReadAll(response.Body)
+		err = json.NewDecoder(response.Body).Decode(&result)
 		if err != nil {
-			ac.logger.Error("error reading response body", zap.Error(err))
-			return result, err
-		}
-
-		err = json.Unmarshal(body, &result)
-		if err != nil {
-			ac.logger.Error("error unmarshaling response body", zap.Error(err))
 			return result, err
 		}
 		return result, nil
 	}
 	if response.StatusCode == http.StatusNoContent {
-		ac.logger.Debug("order is not registered in the accrual system", zap.String("orderNumber", orderNumber))
 		return result, ErrOrderNotRegistered
 	}
 	if response.StatusCode == http.StatusTooManyRequests {
-		// TODO: honor the Retry-After header on 429 responses.
-		ac.logger.Debug("accrual rate limit exceeded", zap.String("orderNumber", orderNumber))
-		return result, ErrTooManyRequests
+		waitTime, err := parseRetryAfterHeader(response)
+		if err != nil {
+			ac.logger.Debug("invalid Retry-After header, using default delay",
+				zap.Error(err), zap.String("orderNumber", orderNumber))
+		}
+		return result, &RetryAfterError{
+			After: waitTime,
+			Err:   ErrTooManyRequests,
+		}
 	}
 	if response.StatusCode >= http.StatusBadRequest && response.StatusCode < http.StatusInternalServerError {
-		ac.logger.Error(ErrAccrualClient.Error(), zap.Int("status_code", response.StatusCode))
 		return result, ErrAccrualClient
 	}
 	if response.StatusCode >= http.StatusInternalServerError {
-		ac.logger.Error(ErrAccrualServer.Error(), zap.Int("status_code", response.StatusCode))
 		return result, ErrAccrualServer
 	}
 
 	return result, ErrAccrualUnexpectedResponse
+}
+
+func parseRetryAfterHeader(response *http.Response) (time.Duration, error) {
+	seconds, err := strconv.Atoi(response.Header.Get("Retry-After"))
+	if err != nil {
+		seconds = 1
+	}
+	if seconds < 0 {
+		seconds = 1
+	}
+	return time.Duration(min(maxRetryWaitSeconds, seconds)) * time.Second, err
 }

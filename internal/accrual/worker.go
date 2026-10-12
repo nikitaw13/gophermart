@@ -2,29 +2,43 @@ package accrual
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/nikitaw13/gophermart/internal/model"
 	"go.uber.org/zap"
 )
 
+var backoffSchedule = []time.Duration{
+	100 * time.Millisecond,
+	200 * time.Millisecond,
+	400 * time.Millisecond,
+}
+
 // accrualWorker periodically polls the accrual system for order status updates.
 type accrualWorker struct {
-	client     *accrualClient
-	repository Repository
-	logger     *zap.Logger
-	interval   time.Duration
-	done       chan struct{}
+	client      *accrualClient
+	repository  Repository
+	logger      *zap.Logger
+	interval    time.Duration
+	workerCount int
+	done        chan struct{}
 }
 
 // NewAccrualWorker creates a worker that polls the accrual system at the given interval.
-func NewAccrualWorker(client *accrualClient, repository Repository, logger *zap.Logger, interval time.Duration) *accrualWorker {
+func NewAccrualWorker(client *accrualClient, repository Repository, logger *zap.Logger, workerCount int, interval time.Duration) *accrualWorker {
+	if workerCount < 1 {
+		workerCount = 1
+	}
 	return &accrualWorker{
-		client:     client,
-		repository: repository,
-		logger:     logger,
-		interval:   interval,
-		done:       make(chan struct{}),
+		client:      client,
+		repository:  repository,
+		logger:      logger,
+		interval:    interval,
+		workerCount: workerCount,
+		done:        make(chan struct{}),
 	}
 }
 
@@ -37,11 +51,20 @@ func (aw *accrualWorker) Done() <-chan struct{} {
 // and updates their accrual status until the context is cancelled.
 func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 	defer close(aw.done)
-	var (
-		orders []string
-		err    error
-		order  accrualOrder
-	)
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	orderNumbers := make(chan string, aw.workerCount)
+	defer close(orderNumbers)
+
+	for i := 0; i < aw.workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			aw.consumeJobs(ctx, orderNumbers)
+		}()
+
+	}
 
 	ticker := time.NewTicker(aw.interval)
 	defer ticker.Stop()
@@ -51,26 +74,78 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			orders, err = aw.repository.FetchNewOrders(ctx)
+			orders, err := aw.repository.FetchNewOrders(ctx)
 			if err != nil {
-				aw.logger.Error(err.Error())
+				aw.logger.Error("error fetching new orders", zap.Error(err))
 				continue
 			}
 			for _, orderNumber := range orders {
-				order, err = aw.client.GetStatus(ctx, orderNumber)
-				if err != nil {
-					aw.logger.Debug(err.Error(), zap.String("orderNumber", orderNumber))
-					continue
-				}
-				if order.Status == model.StatusRegistered {
-					continue
-				}
-				err = aw.repository.UpdateOrder(ctx, orderNumber, order.Status, order.Accrual)
-				if err != nil {
-					aw.logger.Error(err.Error())
-					continue
+				select {
+				case orderNumbers <- orderNumber:
+				case <-ctx.Done():
+					return nil
 				}
 			}
 		}
 	}
+}
+
+func (aw *accrualWorker) consumeJobs(ctx context.Context, orderNumbers <-chan string) {
+	for orderNumber := range orderNumbers {
+		err := aw.processOrder(ctx, orderNumber)
+		if err != nil {
+			aw.logger.Error("error processing an order", zap.Error(err), zap.String("order", orderNumber))
+		}
+	}
+}
+
+func (aw *accrualWorker) processOrder(ctx context.Context, orderNumber string) error {
+	order, err := aw.getStatusWithRetries(ctx, orderNumber)
+	if err != nil {
+		return err
+	}
+
+	if order.Status == model.StatusRegistered {
+		return nil
+	}
+
+	err = aw.repository.UpdateOrder(ctx, orderNumber, order.Status, order.Accrual)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (aw *accrualWorker) getStatusWithRetries(ctx context.Context, orderNumber string) (Order, error) {
+	var lastError error
+
+	for _, delay := range backoffSchedule {
+		order, err := aw.client.GetStatus(ctx, orderNumber)
+
+		if err == nil {
+			return order, nil
+		}
+
+		if Classify(err) == NonRetriable {
+			return order, err
+		}
+
+		// Use the backoff delay unless the server requested a longer Retry-After wait.
+		wait := delay
+
+		if ra, ok := errors.AsType[*RetryAfterError](err); ok {
+			wait = ra.After
+		}
+
+		lastError = err
+
+		select {
+		case <-ctx.Done():
+			return order, ctx.Err()
+		case <-time.After(wait):
+		}
+
+	}
+
+	return Order{}, fmt.Errorf("all attempts unsuccessful: %w", lastError)
 }
