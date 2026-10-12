@@ -38,7 +38,7 @@ func requireJSONContent(next http.Handler) http.Handler {
 
 // validateToken rejects requests without a valid Bearer token in the Authorization
 // header and stores the authenticated username in the request context.
-func (h *apiHandler) validateToken(next http.Handler) http.Handler {
+func (h *APIHandler) validateToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		authHeader := req.Header.Get("Authorization")
 

@@ -8,7 +8,7 @@ import (
 )
 
 // Routes builds and returns the chi router with all gophermart endpoints registered.
-func (h *apiHandler) Routes() *chi.Mux {
+func (h *APIHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
 	compressor := chimw.NewCompressor(gzip.DefaultCompression)
 	router.Use(compressor.Handler)

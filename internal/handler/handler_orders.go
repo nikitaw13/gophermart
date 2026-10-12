@@ -12,7 +12,7 @@ import (
 )
 
 // loadOrder handles POST /api/user/orders.
-func (h *apiHandler) loadOrder(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) loadOrder(w http.ResponseWriter, req *http.Request) {
 	req.Body = http.MaxBytesReader(w, req.Body, maxRequestBodySize)
 	orderNumber, err := io.ReadAll(req.Body)
 	if maxBytesError, ok := errors.AsType[*http.MaxBytesError](err); ok {
@@ -56,7 +56,7 @@ func (h *apiHandler) loadOrder(w http.ResponseWriter, req *http.Request) {
 }
 
 // listOrders handles GET /api/user/orders.
-func (h *apiHandler) listOrders(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) listOrders(w http.ResponseWriter, req *http.Request) {
 	username := usernameFromContext(req.Context())
 
 	ctx, cancel := context.WithTimeout(req.Context(), queryTimeout)

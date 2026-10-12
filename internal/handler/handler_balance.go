@@ -9,7 +9,7 @@ import (
 )
 
 // getBalance handles GET /api/user/balance.
-func (h *apiHandler) getBalance(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) getBalance(w http.ResponseWriter, req *http.Request) {
 	username := usernameFromContext(req.Context())
 
 	ctx, cancel := context.WithTimeout(req.Context(), queryTimeout)

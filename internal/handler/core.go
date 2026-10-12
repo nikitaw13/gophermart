@@ -15,14 +15,14 @@ import (
 const queryTimeout = 3 * time.Second
 
 // apiHandler serves the gophermart HTTP API on top of a LoyaltyService.
-type apiHandler struct {
+type APIHandler struct {
 	svc    *service.LoyaltyService
 	logger *zap.Logger
 }
 
 // NewAPIHandler creates a new API handler for the given loyalty service and logger.
-func NewAPIHandler(svc *service.LoyaltyService, logger *zap.Logger) *apiHandler {
-	return &apiHandler{
+func NewAPIHandler(svc *service.LoyaltyService, logger *zap.Logger) *APIHandler {
+	return &APIHandler{
 		svc:    svc,
 		logger: logger,
 	}

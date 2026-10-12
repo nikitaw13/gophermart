@@ -10,7 +10,7 @@ import (
 )
 
 // registerUser handles POST /api/user/register.
-func (h *apiHandler) registerUser(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) registerUser(w http.ResponseWriter, req *http.Request) {
 	user, ok := decodeJSON[model.User](w, req, h.logger)
 	if !ok {
 		return
@@ -49,7 +49,7 @@ func (h *apiHandler) registerUser(w http.ResponseWriter, req *http.Request) {
 }
 
 // loginUser handles POST /api/user/login.
-func (h *apiHandler) loginUser(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) loginUser(w http.ResponseWriter, req *http.Request) {
 	user, ok := decodeJSON[model.User](w, req, h.logger)
 	if !ok {
 		return
@@ -65,7 +65,7 @@ func (h *apiHandler) loginUser(w http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	token, err := h.svc.LoginUser(ctx, user)
-	if errors.Is(err, model.ErrUserNotFound) || errors.Is(err, model.ErrBadPassword) || errors.Is(err, model.ErrMismatchedPassword) {
+	if errors.Is(err, model.ErrUserNotFound) || errors.Is(err, model.ErrPasswordRejected) || errors.Is(err, model.ErrMismatchedPassword) {
 		h.logger.Debug(err.Error(), zap.String("username", user.Username))
 		http.Error(w, "Invalid login or password", http.StatusUnauthorized)
 		return

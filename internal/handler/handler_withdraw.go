@@ -11,7 +11,7 @@ import (
 )
 
 // withdraw handles POST /api/user/balance/withdraw.
-func (h *apiHandler) withdraw(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) withdraw(w http.ResponseWriter, req *http.Request) {
 	withdrawalRequest, ok := decodeJSON[model.WithdrawalRequest](w, req, h.logger)
 	if !ok {
 		return
@@ -56,7 +56,7 @@ func (h *apiHandler) withdraw(w http.ResponseWriter, req *http.Request) {
 }
 
 // listWithdrawals handles GET /api/user/withdrawals.
-func (h *apiHandler) listWithdrawals(w http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) listWithdrawals(w http.ResponseWriter, req *http.Request) {
 	username := usernameFromContext(req.Context())
 
 	ctx, cancel := context.WithTimeout(req.Context(), queryTimeout)
