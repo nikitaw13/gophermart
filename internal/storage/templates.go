@@ -14,13 +14,6 @@ const (
 
 var (
 	// User-related
-	userExistsTemplate = fmt.Sprintf(`
-	SELECT EXISTS(
-		SELECT 1 
-		FROM %s 
-		WHERE username = $1)
-	`, usersTableName)
-
 	getPasswordHashTemplate = fmt.Sprintf(`
 	SELECT password 
 	FROM %s 

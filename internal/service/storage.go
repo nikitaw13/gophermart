@@ -1,3 +1,4 @@
+//go:generate mockgen -source=storage.go -destination=../mocks/service_storage_mock.go -package=mocks
 package service
 
 import (
@@ -8,7 +9,6 @@ import (
 
 // Repository is the storage interface consumed by LoyaltyService.
 type Repository interface {
-	UserExists(ctx context.Context, username string) (bool, error)
 	GetPasswordHash(ctx context.Context, username string) (string, error)
 	CreateUser(ctx context.Context, username string, passwordHash string) error
 	RegisterOrder(ctx context.Context, orderNumber string, username string) (model.OrderRegistrationResult, error)

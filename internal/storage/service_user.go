@@ -12,24 +12,6 @@ import (
 	"github.com/nikitaw13/gophermart/internal/model"
 )
 
-// UserExists reports whether a user with the given username exists.
-func (ps *PostgresStorage) UserExists(ctx context.Context, username string) (bool, error) {
-	var exists bool
-
-	operation := func() error {
-		err := ps.db.QueryRow(ctx, userExistsTemplate, username).Scan(&exists)
-		return err
-	}
-
-	err := ps.withRetries(ctx, operation)
-
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
-}
-
 // CreateUser inserts a new user with the given username and password hash.
 func (ps *PostgresStorage) CreateUser(ctx context.Context, username string, passwordHash string) error {
 	var pgErr *pgconn.PgError
