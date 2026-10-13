@@ -57,7 +57,7 @@ func (ps *PostgresStorage) withRetries(ctx context.Context, operation func() err
 		}
 	}
 
-	// last attempt
+	// Final attempt: no backoff sleep afterwards, so it runs outside the loop.
 	lastErr = operation()
 	if lastErr == nil {
 		return nil

@@ -1,6 +1,6 @@
 package storage
 
-// Service-user contract
+// User account storage: registration and credential lookup.
 
 import (
 	"context"

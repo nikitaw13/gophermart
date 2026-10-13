@@ -1,6 +1,6 @@
 package storage
 
-// Service-withdrawal contract
+// Balance queries and withdrawal operations.
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func (ps *PostgresStorage) GetBalance(ctx context.Context, username string) (mod
 // was already paid, returns its current owner without modifying it.
 func (ps *PostgresStorage) Withdraw(ctx context.Context, username string, withdrawal model.WithdrawalRequest) (model.WithdrawalRegistrationResult, error) {
 	var result model.WithdrawalRegistrationResult
-	var response model.BalanceResponse
+	var balance model.BalanceResponse
 	var withdrawalID string
 
 	operation := func() error {
@@ -46,11 +46,11 @@ func (ps *PostgresStorage) Withdraw(ctx context.Context, username string, withdr
 			return err
 		}
 
-		err = tx.QueryRow(ctx, getBalanceTemplate, username).Scan(&response.Current, &response.Withdrawn)
+		err = tx.QueryRow(ctx, getBalanceTemplate, username).Scan(&balance.Current, &balance.Withdrawn)
 		if err != nil {
 			return err
 		}
-		if response.Current < withdrawal.Amount {
+		if balance.Current < withdrawal.Amount {
 			return model.ErrInsufficientFunds
 		}
 		err = tx.QueryRow(ctx, withdrawTemplate, username, withdrawal.OrderNumber, withdrawal.Amount).Scan(&withdrawalID)

@@ -76,7 +76,7 @@ func (h *APIHandler) listOrders(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(orders)
 	if err != nil {
-		h.logger.Error("failed to marshal orders", zap.Error(err))
+		h.logger.Debug("failed to marshal orders", zap.Error(err))
 		return
 	}
 }

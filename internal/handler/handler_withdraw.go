@@ -76,7 +76,7 @@ func (h *APIHandler) listWithdrawals(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(withdrawals)
 	if err != nil {
-		h.logger.Error("failed to marshal withdrawals", zap.Error(err))
+		h.logger.Debug("failed to marshal withdrawals", zap.Error(err))
 		return
 	}
 }

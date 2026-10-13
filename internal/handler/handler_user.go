@@ -31,6 +31,12 @@ func (h *APIHandler) registerUser(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "User already exists", http.StatusConflict)
 		return
 	}
+	// Defensive: user.Validate() already rejects over-long passwords before bcrypt runs.
+	if errors.Is(err, model.ErrPasswordTooLong) {
+		h.logger.Debug(err.Error(), zap.String("username", user.Username))
+		http.Error(w, "Password is too long", http.StatusBadRequest)
+		return
+	}
 
 	if err != nil {
 		h.logger.Error("failed to register user", zap.Error(err))
@@ -65,7 +71,8 @@ func (h *APIHandler) loginUser(w http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	token, err := h.svc.LoginUser(ctx, user)
-	if errors.Is(err, model.ErrUserNotFound) || errors.Is(err, model.ErrPasswordRejected) || errors.Is(err, model.ErrMismatchedPassword) {
+	// All credential failures map to the same 401, so the response does not reveal which part failed.
+	if errors.Is(err, model.ErrUserNotFound) || errors.Is(err, model.ErrPasswordTooLong) || errors.Is(err, model.ErrMismatchedPassword) {
 		h.logger.Debug(err.Error(), zap.String("username", user.Username))
 		http.Error(w, "Invalid login or password", http.StatusUnauthorized)
 		return

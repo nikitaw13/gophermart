@@ -54,14 +54,14 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	orderNumbers := make(chan string, aw.workerCount)
-	defer close(orderNumbers)
+	orderNumberStream := make(chan string, aw.workerCount)
+	defer close(orderNumberStream)
 
 	for i := 0; i < aw.workerCount; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			aw.consumeJobs(ctx, orderNumbers)
+			aw.consumeJobs(ctx, orderNumberStream)
 		}()
 
 	}
@@ -81,7 +81,7 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 			}
 			for _, orderNumber := range orders {
 				select {
-				case orderNumbers <- orderNumber:
+				case orderNumberStream <- orderNumber:
 				case <-ctx.Done():
 					return nil
 				}
@@ -90,8 +90,8 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 	}
 }
 
-func (aw *accrualWorker) consumeJobs(ctx context.Context, orderNumbers <-chan string) {
-	for orderNumber := range orderNumbers {
+func (aw *accrualWorker) consumeJobs(ctx context.Context, orderNumberStream <-chan string) {
+	for orderNumber := range orderNumberStream {
 		err := aw.processOrder(ctx, orderNumber)
 		if err != nil {
 			aw.logger.Error("error processing an order", zap.Error(err), zap.String("order", orderNumber))

@@ -1,6 +1,6 @@
 package storage
 
-// Accrual contract
+// Accrual polling support: order numbers awaiting processing by the accrual worker.
 
 import (
 	"context"

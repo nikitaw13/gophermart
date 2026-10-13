@@ -8,20 +8,19 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nikitaw13/gophermart/internal/service"
 	"go.uber.org/zap"
 )
 
 const queryTimeout = 3 * time.Second
 
-// apiHandler serves the gophermart HTTP API on top of a LoyaltyService.
+// APIHandler serves the gophermart HTTP API on top of a Service.
 type APIHandler struct {
-	svc    *service.LoyaltyService
+	svc    Service
 	logger *zap.Logger
 }
 
-// NewAPIHandler creates a new API handler for the given loyalty service and logger.
-func NewAPIHandler(svc *service.LoyaltyService, logger *zap.Logger) *APIHandler {
+// NewAPIHandler creates a new API handler for the given Service and logger.
+func NewAPIHandler(svc Service, logger *zap.Logger) *APIHandler {
 	return &APIHandler{
 		svc:    svc,
 		logger: logger,
@@ -42,25 +41,25 @@ func decodeJSON[T any](w http.ResponseWriter, req *http.Request, logger *zap.Log
 		return v, false
 	}
 	if err != nil {
-		logger.Error("error reading buffer", zap.Error(err))
+		logger.Debug("error reading buffer", zap.Error(err))
 		http.Error(w, "The request contains bad syntax or cannot be fulfilled", http.StatusBadRequest)
 		return v, false
 	}
 
 	err = json.Unmarshal(buf.Bytes(), &v)
 	if syntaxErr, ok := errors.AsType[*json.SyntaxError](err); ok {
-		logger.Error("invalid JSON syntax", zap.Error(err))
+		logger.Debug("invalid JSON syntax", zap.Error(err))
 		http.Error(w, fmt.Sprintf("invalid JSON syntax at offset %d", syntaxErr.Offset), http.StatusBadRequest)
 		return v, false
 	}
 	if unmarshalTypeErr, ok := errors.AsType[*json.UnmarshalTypeError](err); ok {
-		logger.Error("invalid type for field", zap.Error(err))
+		logger.Debug("invalid type for field", zap.Error(err))
 		http.Error(w, fmt.Sprintf("invalid type %q for field %q", unmarshalTypeErr.Value, unmarshalTypeErr.Field), http.StatusBadRequest)
 		return v, false
 	}
 
 	if err != nil {
-		logger.Error("error unmarshaling", zap.Error(err))
+		logger.Debug("error unmarshaling", zap.Error(err))
 		http.Error(w, "The request contains bad syntax or cannot be fulfilled", http.StatusBadRequest)
 		return v, false
 	}

@@ -29,17 +29,9 @@ func NewLoyaltyService(repository Repository, authManager AuthManager, logger *z
 
 // RegisterUser validates that the username is free, hashes the password, creates the user and returns a signed token.
 func (svc *LoyaltyService) RegisterUser(ctx context.Context, user model.User) (string, error) {
-	found, err := svc.repository.UserExists(ctx, user.Username)
-	if err != nil {
-		return "", err
-	}
-	if found {
-		return "", model.ErrUserAlreadyExists
-	}
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-		return "", model.ErrBadPassword
+		return "", model.ErrPasswordTooLong
 	}
 	if err != nil {
 		return "", err
@@ -70,7 +62,7 @@ func (svc *LoyaltyService) LoginUser(ctx context.Context, user model.User) (stri
 		return "", model.ErrMismatchedPassword
 	}
 	if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-		return "", model.ErrBadPassword
+		return "", model.ErrPasswordTooLong
 	}
 	if err != nil {
 		return "", err
@@ -152,7 +144,7 @@ func (svc *LoyaltyService) Withdraw(ctx context.Context, username string, withdr
 	}
 
 	if withdrawalRegistrationResult.Inserted {
-		// audit-log
+		// Audit log: every successful withdrawal must be traceable.
 		svc.logger.Info("withdrawal recorded",
 			zap.String("username", username),
 			zap.String("order", withdrawal.OrderNumber),

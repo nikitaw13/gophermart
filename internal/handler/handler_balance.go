@@ -25,7 +25,7 @@ func (h *APIHandler) getBalance(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(balance)
 	if err != nil {
-		h.logger.Error("failed to marshal balance response", zap.Error(err))
+		h.logger.Debug("failed to marshal balance response", zap.Error(err))
 		return
 	}
 }

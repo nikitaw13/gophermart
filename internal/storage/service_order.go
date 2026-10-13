@@ -1,6 +1,6 @@
 package storage
 
-// Service-order contract
+// Order registration and order history queries.
 
 import (
 	"context"

@@ -1,6 +1,3 @@
-// Package auth issues and verifies JWT-based authentication tokens.
-// Tokens are consumed by the service (issued on register) and the middleware (verified per request).
-// It uses only a secret key and HMAC signing, with no database or HTTP dependencies.
 package auth
 
 import (
@@ -71,7 +68,7 @@ func (m *JWTManager) VerifyToken(tokenString string) (string, error) {
 		return "", err
 	}
 
-	// an invalid token returns a non-nil err — the !token.Valid branch is effectively unreachable
+	// ParseWithClaims returns a non-nil error for an invalid token, so this check is defensive.
 	if !token.Valid {
 		return "", ErrTokenNotValid
 	}
