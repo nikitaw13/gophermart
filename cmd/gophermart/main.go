@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -24,25 +22,22 @@ import (
 )
 
 func main() {
-	parseEnvs()
-	parseFlags()
-
-	err := validateArguments()
+	cfg, err := LoadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = run()
+	err = run(context.Background(), cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run() error {
+func run(ctx context.Context, cfg Config) error {
 	// The first SIGINT/SIGTERM triggers a graceful shutdown; a second one kills
 	// the process immediately (default signal behavior) — for those unwilling
 	// to wait for the graceful path to finish.
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	// Worker context, cancellable on demand: cancelWorker() also stops the worker
@@ -50,22 +45,13 @@ func run() error {
 	workerCtx, cancelWorker := context.WithCancel(signalCtx)
 	defer cancelWorker()
 
-	err := logger.InitLogger(argumentLogLevel)
+	err := logger.InitLogger(cfg.logLevel)
 	if err != nil {
 		return err
 	}
+	zapLogger := logger.Logger
 
-	if argumentJWTSecretKey == "" {
-		buf := make([]byte, 32)
-		_, err := rand.Read(buf)
-		if err != nil {
-			return fmt.Errorf("generate JWT secret: %w", err)
-		}
-		argumentJWTSecretKey = base64.StdEncoding.EncodeToString(buf)
-		logger.Logger.Warn("JWT secret is not provided, using ephemeral; sessions won't survive restart")
-	}
-
-	pool, err := pgxpool.New(context.Background(), argumentDSN)
+	pool, err := pgxpool.New(context.Background(), cfg.dsn)
 	if err != nil {
 		return err
 	}
@@ -90,13 +76,13 @@ func run() error {
 	)
 
 	var (
-		pgStorage      = storage.NewPostgresStorage(pool, databaseTimeouts, classifier, logger.Logger)
-		jwtManager     = auth.NewJWTManager(argumentJWTSecretKey, logger.Logger)
-		loyaltyService = service.NewLoyaltyService(pgStorage, jwtManager, logger.Logger)
-		apiHandler     = handler.NewAPIHandler(loyaltyService, logger.Logger)
+		pgStorage      = storage.NewPostgresStorage(pool, databaseTimeouts, classifier, zapLogger)
+		jwtManager     = auth.NewJWTManager(cfg.jwtSecretKey, zapLogger)
+		loyaltyService = service.NewLoyaltyService(pgStorage, jwtManager, zapLogger)
+		apiHandler     = handler.NewAPIHandler(loyaltyService, zapLogger)
 		router         = apiHandler.Routes()
 		srv            = &http.Server{
-			Addr:         argumentServiceAddress,
+			Addr:         cfg.serviceAddress,
 			ReadTimeout:  2 * time.Second,
 			WriteTimeout: 5 * time.Second,
 			IdleTimeout:  120 * time.Second,
@@ -111,7 +97,7 @@ func run() error {
 	// ListenAndServe runs in its own goroutine, leaving the main goroutine free
 	// to call Shutdown on srv once a stop signal arrives.
 	go func() {
-		logger.Logger.Info("server is running", zap.String("address", argumentServiceAddress), zap.String("log_level", argumentLogLevel))
+		zapLogger.Info("server is running", zap.String("address", cfg.serviceAddress), zap.String("log_level", cfg.logLevel))
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 		}
@@ -119,15 +105,15 @@ func run() error {
 	}()
 
 	var (
-		accrualClient = accrual.NewAccrualClient(argumentAccrualAddress, logger.Logger)
-		worker        = accrual.NewAccrualWorker(accrualClient, pgStorage, logger.Logger, time.Second*1)
+		accrualClient = accrual.NewAccrualClient(cfg.accrualAddress, zapLogger)
+		worker        = accrual.NewAccrualWorker(accrualClient, pgStorage, zapLogger, cfg.accrualWorkerCount, cfg.accrualPollInterval)
 	)
 
 	go worker.ProcessNewOrders(workerCtx)
 
-	var serverFail error
+	var listenAndServeErr error
 	select {
-	case serverFail = <-serverErr:
+	case listenAndServeErr = <-serverErr:
 		// The server died on its own — stop the worker as well.
 		cancelWorker()
 	case <-workerCtx.Done():
@@ -147,10 +133,10 @@ func run() error {
 	select {
 	case <-worker.Done():
 	case <-time.After(10 * time.Second):
-		logger.Logger.Error("worker didn't stop in time")
+		zapLogger.Error("worker didn't stop in time")
 	}
-	if serverFail != nil {
-		return serverFail
+	if listenAndServeErr != nil {
+		return listenAndServeErr
 	}
 	return err
 }
