@@ -45,11 +45,10 @@ func run(ctx context.Context, cfg Config) error {
 	workerCtx, cancelWorker := context.WithCancel(signalCtx)
 	defer cancelWorker()
 
-	err := logger.InitLogger(cfg.logLevel)
+	zapLogger, err := logger.NewLogger(cfg.logLevel)
 	if err != nil {
 		return err
 	}
-	zapLogger := logger.Logger
 
 	pool, err := pgxpool.New(context.Background(), cfg.dsn)
 	if err != nil {
