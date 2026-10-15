@@ -61,9 +61,6 @@ func (svc *LoyaltyService) LoginUser(ctx context.Context, user model.User) (stri
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return "", model.ErrMismatchedPassword
 	}
-	if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-		return "", model.ErrPasswordTooLong
-	}
 	if err != nil {
 		return "", err
 	}
