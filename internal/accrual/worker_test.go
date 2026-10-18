@@ -53,7 +53,7 @@ func Test_accrualWorker_ProcessNewOrders(t *testing.T) {
 						return []string{}, ctx.Err()
 					}
 					fetchCount++
-					return []string{}, testErrFetchNewOrders
+					return []string{}, errTestFetchNewOrders
 				})
 			},
 			wantErr: nil,
@@ -234,9 +234,9 @@ func Test_accrualWorker_processOrder(t *testing.T) {
 			},
 			orderNumber: testValidOrderNumber,
 			setup: func(repo *mocks.MockAccrualRepository) {
-				expectUpdateOrder(repo, testValidOrderNumber).Return(testErrUpdateOrder)
+				expectUpdateOrder(repo, testValidOrderNumber).Return(errTestUpdateOrder)
 			},
-			wantErr: testErrUpdateOrder,
+			wantErr: errTestUpdateOrder,
 		},
 	}
 	for _, tt := range tests {

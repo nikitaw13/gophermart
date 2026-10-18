@@ -17,7 +17,8 @@ import (
 func Test_accrualClient_GetStatus(t *testing.T) {
 	tests := []struct {
 		name           string
-		resp           *http.Response
+		httpStatus     int
+		body           string
 		respErr        error
 		orderNumber    string
 		want           Order
@@ -26,7 +27,8 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 	}{
 		{
 			name:        "Successful request → ok",
-			resp:        newOrderResp(accrualStub{order: testSuccessOrderResponse, httpStatus: http.StatusOK}),
+			httpStatus:  http.StatusOK,
+			body:        orderJSONBody(testSuccessOrderResponse),
 			respErr:     nil,
 			orderNumber: testValidOrderNumber,
 			want:        testSuccessOrderResponse,
@@ -34,7 +36,7 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 		},
 		{
 			name:        "Order is not registered → ok",
-			resp:        newResp(http.StatusNoContent, ""),
+			httpStatus:  http.StatusNoContent,
 			respErr:     nil,
 			orderNumber: testValidOrderNumber,
 			want:        Order{},
@@ -42,7 +44,7 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 		},
 		{
 			name:        "Empty body → error",
-			resp:        newResp(http.StatusOK, ""),
+			httpStatus:  http.StatusOK,
 			respErr:     nil,
 			orderNumber: testValidOrderNumber,
 			want:        Order{},
@@ -52,7 +54,6 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 		// Transport errors from http.Client.Do.
 		{
 			name:        "Closed network connection → error",
-			resp:        nil,
 			respErr:     net.ErrClosed,
 			orderNumber: testValidOrderNumber,
 			want:        Order{},
@@ -60,7 +61,6 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 		},
 		{
 			name:        "Server has been closed → error",
-			resp:        nil,
 			respErr:     http.ErrServerClosed,
 			orderNumber: testValidOrderNumber,
 			want:        Order{},
@@ -69,32 +69,32 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 		// Errors mapped from HTTP response status codes.
 		{
 			name:           "Too many requests → error",
-			resp:           newResp(http.StatusTooManyRequests, ""),
+			httpStatus:     http.StatusTooManyRequests,
 			respErr:        nil,
 			want:           Order{},
 			wantRetryAfter: testFallbackRetryAfter * time.Second,
 			wantErr:        ErrTooManyRequests,
 		},
 		{
-			name:    "Get status client failed → error",
-			resp:    newResp(http.StatusBadRequest, ""),
-			respErr: nil,
-			want:    Order{},
-			wantErr: ErrAccrualClient,
+			name:       "Get status client failed → error",
+			httpStatus: http.StatusBadRequest,
+			respErr:    nil,
+			want:       Order{},
+			wantErr:    ErrAccrualClient,
 		},
 		{
-			name:    "Get status server failed → error",
-			resp:    newResp(http.StatusInternalServerError, ""),
-			respErr: nil,
-			want:    Order{},
-			wantErr: ErrAccrualServer,
+			name:       "Get status server failed → error",
+			httpStatus: http.StatusInternalServerError,
+			respErr:    nil,
+			want:       Order{},
+			wantErr:    ErrAccrualServer,
 		},
 		{
-			name:    "Get status unexpected server response → error",
-			resp:    newResp(http.StatusUseProxy, ""),
-			respErr: nil,
-			want:    Order{},
-			wantErr: ErrAccrualUnexpectedResponse,
+			name:       "Get status unexpected server response → error",
+			httpStatus: http.StatusUseProxy,
+			respErr:    nil,
+			want:       Order{},
+			wantErr:    ErrAccrualUnexpectedResponse,
 		},
 	}
 	for _, tt := range tests {
@@ -105,7 +105,10 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 				zap.NewNop(),
 			)
 			ac.client.Transport = roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-				return tt.resp, tt.respErr
+				if tt.respErr != nil {
+					return nil, tt.respErr
+				}
+				return newResp(tt.httpStatus, tt.body), nil
 			})
 
 			retryAfterErr := &RetryAfterError{}

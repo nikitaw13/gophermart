@@ -41,8 +41,8 @@ type accrualStub struct {
 }
 
 var (
-	testErrUpdateOrder    = errors.New("update order failed")
-	testErrFetchNewOrders = errors.New("fetch new orders failed")
+	errTestUpdateOrder    = errors.New("update order failed")
+	errTestFetchNewOrders = errors.New("fetch new orders failed")
 
 	testSuccessOrderResponse = Order{
 		Order:   testValidOrderNumber,
@@ -83,12 +83,17 @@ func newResp(status int, body string) *http.Response {
 	}
 }
 
+// orderJSONBody renders the order as an accrual system response body.
+func orderJSONBody(order Order) string {
+	return fmt.Sprintf(`{"order":"%s","status":"%v","accrual":%v}`,
+		order.Order,
+		order.Status,
+		order.Accrual)
+}
+
 // newOrderResp builds an accrual system JSON response from the stub.
 func newOrderResp(stub accrualStub) *http.Response {
-	return newResp(stub.httpStatus, fmt.Sprintf(`{"order":"%s","status":"%v","accrual":%v}`,
-		stub.order.Order,
-		stub.order.Status,
-		stub.order.Accrual))
+	return newResp(stub.httpStatus, orderJSONBody(stub.order))
 }
 
 // expectUpdateOrder sets up an UpdateOrder expectation for the given order,
