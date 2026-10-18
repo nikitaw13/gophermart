@@ -20,7 +20,7 @@ var backoffSchedule = []time.Duration{
 // accrualWorker periodically polls the accrual system for order status updates.
 type accrualWorker struct {
 	client      *accrualClient
-	repository  Repository
+	repository  AccrualRepository
 	logger      *zap.Logger
 	interval    time.Duration
 	workerCount int
@@ -28,7 +28,7 @@ type accrualWorker struct {
 }
 
 // NewAccrualWorker creates a worker that polls the accrual system at the given interval.
-func NewAccrualWorker(client *accrualClient, repository Repository, logger *zap.Logger, workerCount int, interval time.Duration) *accrualWorker {
+func NewAccrualWorker(client *accrualClient, repository AccrualRepository, logger *zap.Logger, workerCount int, interval time.Duration) *accrualWorker {
 	if workerCount < 1 {
 		workerCount = 1
 	}
@@ -58,11 +58,9 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 	defer close(orderNumberStream)
 
 	for i := 0; i < aw.workerCount; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			aw.consumeJobs(ctx, orderNumberStream)
-		}()
+		})
 
 	}
 
