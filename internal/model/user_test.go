@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	testName      = "GopherName"
+	testUsername  = "GopherName"
 	testPassword  = "GopherPassword"
 	test73Symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_"
 	test72Symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"
@@ -29,7 +29,7 @@ func TestUser_Validate(t *testing.T) {
 		},
 		{
 			name:    "missing password → error",
-			fields:  fields{Username: testName, Password: ""},
+			fields:  fields{Username: testUsername, Password: ""},
 			wantErr: ErrMissingPassword,
 		},
 		{
@@ -39,7 +39,7 @@ func TestUser_Validate(t *testing.T) {
 		},
 		{
 			name:    "password > 72 bytes → error",
-			fields:  fields{Username: testName, Password: test73Symbols},
+			fields:  fields{Username: testUsername, Password: test73Symbols},
 			wantErr: ErrPasswordTooLong,
 		},
 		{
@@ -49,7 +49,7 @@ func TestUser_Validate(t *testing.T) {
 		},
 		{
 			name:    "password = 72 bytes → ok",
-			fields:  fields{Username: testName, Password: test72Symbols},
+			fields:  fields{Username: testUsername, Password: test72Symbols},
 			wantErr: nil,
 		},
 	}

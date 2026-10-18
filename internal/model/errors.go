@@ -38,11 +38,8 @@ var (
 	// ErrUserNotFound is returned when no user with the given username exists.
 	ErrUserNotFound = errors.New("user not found")
 
-	// ErrBadPassword is returned when the password fails validation.
-	ErrBadPassword = errors.New("bad password")
-
 	// ErrMismatchedPassword is returned when the supplied password does not match the stored hash.
-	ErrMismatchedPassword = errors.New("a password and hash do not match")
+	ErrMismatchedPassword = errors.New("password does not match the stored hash")
 )
 
 // Withdrawal-related errors
