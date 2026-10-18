@@ -5,7 +5,6 @@ import (
 	"errors"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/nikitaw13/gophermart/internal/auth"
 	"github.com/nikitaw13/gophermart/internal/mocks"
@@ -13,131 +12,6 @@ import (
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	testUsername                   = "GopherUsername"
-	testExistingUsername           = "GopherExistingUsername"
-	testEmptyUsername              = ""
-	testAnotherUsername            = "GopherAnotherUsername"
-	testToken                      = "GopherToken"
-	testEmptyToken                 = ""
-	testPassword                   = "GopherPassword"
-	testPassword72Symbols          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"
-	testPassword73Symbols          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_"
-	testInvalidHash                = "12345"
-	testEmptyOrderNumber           = ""
-	testValidOrderNumber           = "79927398713"
-	testAnotherValidOrderNumber    = "5412751234123456"
-	testYetAnotherValidOrderNumber = "4000123456789010"
-	testInvalidOrderNumber         = "123"
-	testPositiveOrderAmount        = 500
-	testNegativeOrderAmount        = -500
-	testZeroOrderAmount            = 0
-)
-
-var (
-	testErrIssueToken        = errors.New("issue token failed")
-	testErrLoadOrder         = errors.New("load order failed")
-	testErrListOrders        = errors.New("list orders failed")
-	testErrGetBalance        = errors.New("get balance failed")
-	testErrListWithdrawals   = errors.New("list withdrawals failed")
-	testErrWithdraw          = errors.New("withdraw failed")
-	testFixedTimestamp       = time.Date(1993, time.August, 22, 0, 0, 0, 0, time.Local)
-	testEmptyOrderResponses  = []model.OrderResponse{}
-	testSingleOrderResponses = []model.OrderResponse{
-		{
-			OrderNumber:  testValidOrderNumber,
-			Status:       model.StatusProcessed,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-	}
-	testThreeOrderResponses = []model.OrderResponse{
-		{
-			OrderNumber:  testValidOrderNumber,
-			Status:       model.StatusProcessed,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:  testAnotherValidOrderNumber,
-			Status:       model.StatusProcessing,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:  testYetAnotherValidOrderNumber,
-			Status:       model.StatusNew,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-	}
-	expectedThreeOrderResponses = []model.OrderResponse{
-		{
-			OrderNumber:  testValidOrderNumber,
-			Status:       model.StatusProcessed,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:  testAnotherValidOrderNumber,
-			Status:       model.StatusProcessing,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:  testYetAnotherValidOrderNumber,
-			Status:       model.StatusNew,
-			Amount:       testPositiveOrderAmount,
-			UploadedTime: testFixedTimestamp,
-		},
-	}
-	testEmptyBalance   = model.BalanceResponse{}
-	testNonZeroBalance = model.BalanceResponse{
-		Current:   500.00,
-		Withdrawn: 1500.00,
-	}
-	expectedNonZeroBalance = model.BalanceResponse{
-		Current:   500.00,
-		Withdrawn: 1500.00,
-	}
-
-	testEmptyWithdrawals    = []model.WithdrawalResponse{}
-	testNonEmptyWithdrawals = []model.WithdrawalResponse{
-		{
-			OrderNumber:   testValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
-			ProcessedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:   testAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
-			ProcessedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:   testYetAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
-			ProcessedTime: testFixedTimestamp,
-		},
-	}
-	expectedNonEmptyWithdrawals = []model.WithdrawalResponse{
-		{
-			OrderNumber:   testValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
-			ProcessedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:   testAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
-			ProcessedTime: testFixedTimestamp,
-		},
-		{
-			OrderNumber:   testYetAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
-			ProcessedTime: testFixedTimestamp,
-		},
-	}
 )
 
 func TestLoyaltyService_RegisterUser(t *testing.T) {
@@ -185,10 +59,10 @@ func TestLoyaltyService_RegisterUser(t *testing.T) {
 			user: model.User{Username: testUsername, Password: testPassword72Symbols},
 			setup: func(t *testing.T, repo *mocks.MockRepository, authMgr *mocks.MockAuthManager) {
 				repo.EXPECT().CreateUser(gomock.Any(), testUsername, gomock.Any()).Return(nil)
-				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, testErrIssueToken)
+				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, errTestIssueToken)
 			},
 			want:    testEmptyToken,
-			wantErr: testErrIssueToken,
+			wantErr: errTestIssueToken,
 		},
 	}
 	for _, tt := range tests {
@@ -274,10 +148,10 @@ func TestLoyaltyService_LoginUser(t *testing.T) {
 			user: model.User{Username: testUsername, Password: testPassword72Symbols},
 			setup: func(t *testing.T, repo *mocks.MockRepository, authMgr *mocks.MockAuthManager) {
 				repo.EXPECT().GetPasswordHash(gomock.Any(), testUsername).Return(bcryptHash(t, testPassword72Symbols), nil)
-				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, testErrIssueToken)
+				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, errTestIssueToken)
 			},
 			want:    testEmptyToken,
-			wantErr: testErrIssueToken,
+			wantErr: errTestIssueToken,
 		},
 	}
 	for _, tt := range tests {
@@ -410,9 +284,9 @@ func TestLoyaltyService_LoadOrder(t *testing.T) {
 			args: args{orderNumber: testValidOrderNumber, username: testUsername},
 			setup: func(repo *mocks.MockRepository) {
 				result := model.OrderRegistrationResult{Inserted: false, Owner: ""}
-				repo.EXPECT().RegisterOrder(gomock.Any(), testValidOrderNumber, testUsername).Return(result, testErrLoadOrder)
+				repo.EXPECT().RegisterOrder(gomock.Any(), testValidOrderNumber, testUsername).Return(result, errTestLoadOrder)
 			},
-			wantErr: testErrLoadOrder,
+			wantErr: errTestLoadOrder,
 		},
 	}
 	for _, tt := range tests {
@@ -466,10 +340,10 @@ func TestLoyaltyService_ListOrders(t *testing.T) {
 			name:     "List orders failed → error",
 			username: testUsername,
 			setup: func(repo *mocks.MockRepository) {
-				repo.EXPECT().ListOrders(gomock.Any(), testUsername).Return(testSingleOrderResponses, testErrListOrders)
+				repo.EXPECT().ListOrders(gomock.Any(), testUsername).Return(testSingleOrderResponses, errTestListOrders)
 			},
 			want:    testSingleOrderResponses,
-			wantErr: testErrListOrders,
+			wantErr: errTestListOrders,
 		},
 	}
 	for _, tt := range tests {
@@ -516,10 +390,10 @@ func TestLoyaltyService_GetBalance(t *testing.T) {
 			name:     "Get balance failed → error",
 			username: testUsername,
 			setup: func(repo *mocks.MockRepository) {
-				repo.EXPECT().GetBalance(gomock.Any(), testUsername).Return(testEmptyBalance, testErrGetBalance)
+				repo.EXPECT().GetBalance(gomock.Any(), testUsername).Return(testEmptyBalance, errTestGetBalance)
 			},
 			want:    testEmptyBalance,
-			wantErr: testErrGetBalance,
+			wantErr: errTestGetBalance,
 		},
 	}
 	for _, tt := range tests {
@@ -653,9 +527,9 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			setup: func(repo *mocks.MockRepository) {
 				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveOrderAmount}
 				result := model.WithdrawalRegistrationResult{Inserted: false, Owner: testEmptyUsername}
-				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, testErrWithdraw)
+				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, errTestWithdraw)
 			},
-			wantErr: testErrWithdraw,
+			wantErr: errTestWithdraw,
 		},
 	}
 	for _, tt := range tests {
@@ -709,10 +583,10 @@ func TestLoyaltyService_ListWithdrawals(t *testing.T) {
 			name:     "List withdrawals failed → error",
 			username: testUsername,
 			setup: func(repo *mocks.MockRepository) {
-				repo.EXPECT().ListWithdrawals(gomock.Any(), testUsername).Return(testEmptyWithdrawals, testErrListWithdrawals)
+				repo.EXPECT().ListWithdrawals(gomock.Any(), testUsername).Return(testEmptyWithdrawals, errTestListWithdrawals)
 			},
 			want:    testEmptyWithdrawals,
-			wantErr: testErrListWithdrawals,
+			wantErr: errTestListWithdrawals,
 		},
 	}
 	for _, tt := range tests {
