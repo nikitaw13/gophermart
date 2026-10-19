@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
-	"time"
 
 	"go.uber.org/zap"
 )
@@ -22,7 +21,7 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 		respErr        error
 		orderNumber    string
 		want           Order
-		wantRetryAfter time.Duration
+		wantRetryAfter int
 		wantErr        error
 	}{
 		{
@@ -72,7 +71,7 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 			httpStatus:     http.StatusTooManyRequests,
 			respErr:        nil,
 			want:           Order{},
-			wantRetryAfter: testFallbackRetryAfter * time.Second,
+			wantRetryAfter: testFallbackRetryAfter,
 			wantErr:        ErrTooManyRequests,
 		},
 		{
@@ -173,43 +172,43 @@ func Test_parseRetryAfterHeader(t *testing.T) {
 	tests := []struct {
 		name     string
 		response *http.Response
-		want     time.Duration
+		want     int
 		wantErr  error
 	}{
 		{
 			name:     "Positive Retry-After header → ok",
 			response: testResponseWithPositiveRetryHeader,
-			want:     testPositiveRetryAfter * time.Second,
+			want:     testPositiveRetryAfter,
 			wantErr:  nil,
 		},
 		{
 			name:     "Zero Retry-After header → ok",
 			response: testResponseWithZeroRetryHeader,
-			want:     testZeroRetryAfter * time.Second,
+			want:     testZeroRetryAfter,
 			wantErr:  nil,
 		},
 		{
 			name:     "Negative Retry-After header → ok",
 			response: testResponseWithNegativeRetryHeader,
-			want:     testFallbackRetryAfter * time.Second,
+			want:     testFallbackRetryAfter,
 			wantErr:  nil,
 		},
 		{
 			name:     "Double max Retry-After header → ok",
 			response: testResponseWithDoubleMaxRetryHeader,
-			want:     maxRetryWaitSeconds * time.Second,
+			want:     maxRetryWaitSeconds,
 			wantErr:  nil,
 		},
 		{
 			name:     "Empty Retry-After header → error",
 			response: testResponseWithEmptyRetryHeader,
-			want:     testFallbackRetryAfter * time.Second,
+			want:     testFallbackRetryAfter,
 			wantErr:  strconv.ErrSyntax,
 		},
 		{
 			name:     "Invalid Retry-After header → error",
 			response: testResponseWithInvalidRetryHeader,
-			want:     testFallbackRetryAfter * time.Second,
+			want:     testFallbackRetryAfter,
 			wantErr:  strconv.ErrSyntax,
 		},
 	}

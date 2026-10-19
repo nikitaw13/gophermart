@@ -3,7 +3,6 @@ package accrual
 import (
 	"errors"
 	"fmt"
-	"time"
 )
 
 var (
@@ -25,12 +24,12 @@ var (
 
 // RetryAfterError wraps an error and indicates how long the caller should wait before retrying.
 type RetryAfterError struct {
-	After time.Duration
+	After int
 	Err   error
 }
 
 func (e *RetryAfterError) Error() string {
-	return fmt.Sprintf("%s (retry after %s)", e.Err, e.After)
+	return fmt.Sprintf("%s (retry after %d)", e.Err, e.After)
 }
 
 func (e *RetryAfterError) Unwrap() error {

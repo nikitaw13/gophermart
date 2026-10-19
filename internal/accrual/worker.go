@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/nikitaw13/gophermart/internal/model"
@@ -24,6 +25,7 @@ type accrualWorker struct {
 	logger      *zap.Logger
 	interval    time.Duration
 	workerCount int
+	pauseUntil  atomic.Int64
 	done        chan struct{}
 }
 
@@ -91,9 +93,12 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 func (aw *accrualWorker) consumeJobs(ctx context.Context, orderNumberStream <-chan string) {
 	for orderNumber := range orderNumberStream {
 		err := aw.processOrder(ctx, orderNumber)
-		if err != nil {
+		if errors.Is(err, ErrOrderNotRegistered) {
+			aw.logger.Debug("order is not yet registered in the accrual system", zap.Error(err), zap.String("order", orderNumber))
+		} else {
 			aw.logger.Error("error processing an order", zap.Error(err), zap.String("order", orderNumber))
 		}
+
 	}
 }
 
@@ -115,10 +120,27 @@ func (aw *accrualWorker) processOrder(ctx context.Context, orderNumber string) e
 }
 
 func (aw *accrualWorker) getStatusWithRetries(ctx context.Context, orderNumber string) (Order, error) {
-	var lastError error
+	var (
+		lastError error
+		order     Order
+		err       error
+	)
 
 	for _, delay := range backoffSchedule {
-		order, err := aw.client.GetStatus(ctx, orderNumber)
+		for {
+			remaining := aw.pauseUntil.Load() - time.Now().Unix()
+			if remaining <= 0 {
+				break
+			}
+
+			select {
+			case <-ctx.Done():
+				return order, ctx.Err()
+			case <-time.After(time.Duration(remaining) * time.Second):
+			}
+		}
+
+		order, err = aw.client.GetStatus(ctx, orderNumber)
 
 		if err == nil {
 			return order, nil
@@ -132,7 +154,20 @@ func (aw *accrualWorker) getStatusWithRetries(ctx context.Context, orderNumber s
 		wait := delay
 
 		if ra, ok := errors.AsType[*RetryAfterError](err); ok {
-			wait = ra.After
+			// Extend the pause deadline if the new one is later.
+			for {
+				oldPauseTimestamp := aw.pauseUntil.Load()
+				newPauseTimestamp := time.Now().Unix() + int64(ra.After)
+
+				if newPauseTimestamp <= oldPauseTimestamp {
+					break
+				}
+				if aw.pauseUntil.CompareAndSwap(oldPauseTimestamp, newPauseTimestamp) {
+					break
+				}
+			}
+
+			wait = time.Duration(ra.After) * time.Second
 		}
 
 		lastError = err

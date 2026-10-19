@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const maxRetryWaitSeconds = 60
+const maxRetryWaitSeconds int = 60
 
 // accrualClient talks to the loyalty accrual system over HTTP.
 type accrualClient struct {
@@ -77,7 +77,7 @@ func (ac *accrualClient) GetStatus(ctx context.Context, orderNumber string) (Ord
 	return result, ErrAccrualUnexpectedResponse
 }
 
-func parseRetryAfterHeader(response *http.Response) (time.Duration, error) {
+func parseRetryAfterHeader(response *http.Response) (int, error) {
 	seconds, err := strconv.Atoi(response.Header.Get("Retry-After"))
 	if err != nil {
 		seconds = 1
@@ -85,5 +85,5 @@ func parseRetryAfterHeader(response *http.Response) (time.Duration, error) {
 	if seconds < 0 {
 		seconds = 1
 	}
-	return time.Duration(min(maxRetryWaitSeconds, seconds)) * time.Second, err
+	return min(maxRetryWaitSeconds, seconds), err
 }
