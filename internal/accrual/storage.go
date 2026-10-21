@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// Repository is the storage interface consumed by accrualWorker.
+// AccrualRepository is the storage interface consumed by accrualWorker.
 type AccrualRepository interface {
 	FetchNewOrders(ctx context.Context) ([]string, error)
 	UpdateOrder(ctx context.Context, orderNumber string, orderStatus string, accrual float64) error

@@ -22,7 +22,7 @@ var (
 	ErrAccrualUnexpectedResponse = errors.New("unexpected response from the accrual server")
 )
 
-// RetryAfterError wraps an error and indicates how long the caller should wait before retrying.
+// RetryAfterError wraps an error and indicates how long, in seconds, the caller should wait before retrying.
 type RetryAfterError struct {
 	After int
 	Err   error

@@ -156,13 +156,13 @@ func (aw *accrualWorker) getStatusWithRetries(ctx context.Context, orderNumber s
 		if ra, ok := errors.AsType[*RetryAfterError](err); ok {
 			// Extend the pause deadline if the new one is later.
 			for {
-				oldPauseTimestamp := aw.pauseUntil.Load()
-				newPauseTimestamp := time.Now().Unix() + int64(ra.After)
+				oldPauseUntil := aw.pauseUntil.Load()
+				newPauseUntil := time.Now().Unix() + int64(ra.After)
 
-				if newPauseTimestamp <= oldPauseTimestamp {
+				if newPauseUntil <= oldPauseUntil {
 					break
 				}
-				if aw.pauseUntil.CompareAndSwap(oldPauseTimestamp, newPauseTimestamp) {
+				if aw.pauseUntil.CompareAndSwap(oldPauseUntil, newPauseUntil) {
 					break
 				}
 			}
