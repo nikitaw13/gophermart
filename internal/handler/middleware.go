@@ -18,7 +18,7 @@ const usernameKey ctxKey = 0
 const maxRequestBodySize = 1 << 20
 
 // msgUnauthorized is written to the HTTP response when the request lacks a valid authorization token.
-const msgUnauthorized = "user is not authorized"
+const msgUnauthorized = "User is not authorized"
 
 // bearerPrefix is the required prefix of the Authorization header value.
 const bearerPrefix = "Bearer "
@@ -28,7 +28,7 @@ func requireJSONContent(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		mediatype, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 		if err != nil || mediatype != "application/json" {
-			http.Error(w, "application/json only", http.StatusBadRequest)
+			http.Error(w, "Only application/json is accepted", http.StatusBadRequest)
 			return
 		}
 		req.Body = http.MaxBytesReader(w, req.Body, maxRequestBodySize)

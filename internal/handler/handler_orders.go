@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/nikitaw13/gophermart/internal/model"
 	"go.uber.org/zap"
@@ -15,6 +16,7 @@ import (
 func (h *APIHandler) loadOrder(w http.ResponseWriter, req *http.Request) {
 	req.Body = http.MaxBytesReader(w, req.Body, maxRequestBodySize)
 	orderNumber, err := io.ReadAll(req.Body)
+
 	if maxBytesError, ok := errors.AsType[*http.MaxBytesError](err); ok {
 		h.logger.Debug("content too large", zap.Error(maxBytesError))
 		http.Error(w, "Content Too Large", http.StatusRequestEntityTooLarge)
@@ -31,7 +33,7 @@ func (h *APIHandler) loadOrder(w http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(req.Context(), queryTimeout)
 	defer cancel()
 
-	err = h.svc.LoadOrder(ctx, string(orderNumber), username)
+	err = h.svc.LoadOrder(ctx, strings.TrimSpace(string(orderNumber)), username)
 	if errors.Is(err, model.ErrMissingOrderNumber) || errors.Is(err, model.ErrInvalidOrderNumber) {
 		h.logger.Debug("invalid order number", zap.Error(err))
 		http.Error(w, "Unprocessable Content", http.StatusUnprocessableEntity)

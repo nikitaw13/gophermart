@@ -51,7 +51,6 @@ func (h *APIHandler) registerUser(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Authorization", bearerPrefix+token)
 	w.WriteHeader(http.StatusOK)
-
 }
 
 // loginUser handles POST /api/user/login.
@@ -80,6 +79,11 @@ func (h *APIHandler) loginUser(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		h.logger.Error("failed to login user", zap.Error(err))
+		http.Error(w, "The server failed to fulfill an apparently valid request", http.StatusInternalServerError)
+		return
+	}
+
+	if token == "" {
 		http.Error(w, "The server failed to fulfill an apparently valid request", http.StatusInternalServerError)
 		return
 	}

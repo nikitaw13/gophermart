@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// queryTimeout bounds each service call made by the handlers.
 const queryTimeout = 3 * time.Second
 
 // APIHandler serves the gophermart HTTP API on top of a Service.
@@ -41,7 +42,7 @@ func decodeJSON[T any](w http.ResponseWriter, req *http.Request, logger *zap.Log
 		return v, false
 	}
 	if err != nil {
-		logger.Debug("error reading buffer", zap.Error(err))
+		logger.Debug("error reading body", zap.Error(err))
 		http.Error(w, "The request contains bad syntax or cannot be fulfilled", http.StatusBadRequest)
 		return v, false
 	}
@@ -49,12 +50,12 @@ func decodeJSON[T any](w http.ResponseWriter, req *http.Request, logger *zap.Log
 	err = json.Unmarshal(buf.Bytes(), &v)
 	if syntaxErr, ok := errors.AsType[*json.SyntaxError](err); ok {
 		logger.Debug("invalid JSON syntax", zap.Error(err))
-		http.Error(w, fmt.Sprintf("invalid JSON syntax at offset %d", syntaxErr.Offset), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid JSON syntax at offset %d", syntaxErr.Offset), http.StatusBadRequest)
 		return v, false
 	}
 	if unmarshalTypeErr, ok := errors.AsType[*json.UnmarshalTypeError](err); ok {
 		logger.Debug("invalid type for field", zap.Error(err))
-		http.Error(w, fmt.Sprintf("invalid type %q for field %q", unmarshalTypeErr.Value, unmarshalTypeErr.Field), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid type %q for field %q", unmarshalTypeErr.Value, unmarshalTypeErr.Field), http.StatusBadRequest)
 		return v, false
 	}
 
