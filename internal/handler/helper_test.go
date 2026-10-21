@@ -35,11 +35,6 @@ var (
 var (
 	testFixedTime = time.Now()
 
-	testBalanceResponse = model.BalanceResponse{
-		Current:   100.00,
-		Withdrawn: 1000.0,
-	}
-
 	testListOrdersResponse = []model.OrderResponse{
 		{
 			OrderNumber:  testValidOrderNumber,
@@ -92,5 +87,16 @@ var (
 		{
 			Amount: math.NaN(),
 		},
+	}
+
+	testGetBalanceResponse = model.BalanceResponse{
+		Current:   500.00,
+		Withdrawn: 1000.00,
+	}
+
+	testWantGetBalanceResponse = testGetBalanceResponse
+
+	testInvalidGetBalanceResponse = model.BalanceResponse{
+		Current: math.NaN(),
 	}
 )
