@@ -36,7 +36,7 @@ func Test_NewAccrualWorker(t *testing.T) {
 	}
 }
 
-func Test_accrualWorker_ProcessNewOrders(t *testing.T) {
+func Test_AccrualWorker_ProcessNewOrders(t *testing.T) {
 	tests := []struct {
 		name             string
 		setup            func(repo *mocks.MockAccrualRepository, cancel context.CancelFunc)
@@ -53,7 +53,7 @@ func Test_accrualWorker_ProcessNewOrders(t *testing.T) {
 						return []string{}, ctx.Err()
 					}
 					fetchCount++
-					return []string{}, errTestFetchNewOrders
+					return []string{}, errFetchNewOrders
 				})
 			},
 			wantErr: nil,
@@ -108,7 +108,7 @@ func Test_accrualWorker_ProcessNewOrders(t *testing.T) {
 			select {
 			case <-aw.Done():
 			case <-time.After(testWorkerDoneTimeout):
-				t.Errorf("accrualWorker.ProcessNewOrders() channel is not closed")
+				t.Errorf("AccrualWorker.ProcessNewOrders() channel is not closed")
 			}
 
 			compareErrors(t, "ProcessNewOrders()", err, tt.wantErr)
@@ -116,7 +116,7 @@ func Test_accrualWorker_ProcessNewOrders(t *testing.T) {
 	}
 }
 
-func Test_accrualWorker_consumeJobs(t *testing.T) {
+func Test_AccrualWorker_consumeJobs(t *testing.T) {
 	tests := []struct {
 		name             string
 		accrualResponses map[string]accrualStub
@@ -205,7 +205,7 @@ func Test_accrualWorker_consumeJobs(t *testing.T) {
 	}
 }
 
-func Test_accrualWorker_processOrder(t *testing.T) {
+func Test_AccrualWorker_processOrder(t *testing.T) {
 	tests := []struct {
 		name            string
 		accrualResponse accrualStub
@@ -234,9 +234,9 @@ func Test_accrualWorker_processOrder(t *testing.T) {
 			},
 			orderNumber: testValidOrderNumber,
 			setup: func(repo *mocks.MockAccrualRepository) {
-				expectUpdateOrder(repo, testValidOrderNumber).Return(errTestUpdateOrder)
+				expectUpdateOrder(repo, testValidOrderNumber).Return(errUpdateOrder)
 			},
-			wantErr: errTestUpdateOrder,
+			wantErr: errUpdateOrder,
 		},
 	}
 	for _, tt := range tests {
@@ -261,7 +261,7 @@ func Test_accrualWorker_processOrder(t *testing.T) {
 	}
 }
 
-func Test_accrualWorker_getStatusWithRetries(t *testing.T) {
+func Test_AccrualWorker_getStatusWithRetries(t *testing.T) {
 	tests := []struct {
 		name                string
 		accrualResponses    []accrualStub

@@ -13,17 +13,17 @@ func TestNewLogger(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "debug -> ok",
+			name:    "debug → ok",
 			level:   "debug",
 			wantErr: false,
 		},
 		{
-			name:    "panic -> ok",
+			name:    "panic → ok",
 			level:   "panic",
 			wantErr: false,
 		},
 		{
-			name:    "invalid level -> error",
+			name:    "invalid level → error",
 			level:   invalidLogLevel,
 			wantErr: true,
 		},
@@ -32,7 +32,7 @@ func TestNewLogger(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewLogger(tt.level)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewLogger() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Errorf("NewLogger() error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}

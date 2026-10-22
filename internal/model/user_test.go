@@ -60,7 +60,7 @@ func TestUser_Validate(t *testing.T) {
 				Password: tt.fields.Password,
 			}
 			if err := user.Validate(); !errors.Is(err, tt.wantErr) {
-				t.Errorf("User.Validate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("User.Validate() error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}

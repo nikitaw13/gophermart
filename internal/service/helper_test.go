@@ -23,25 +23,25 @@ const (
 	testAnotherValidOrderNumber    = "5412751234123456"
 	testYetAnotherValidOrderNumber = "4000123456789010"
 	testInvalidOrderNumber         = "123"
-	testPositiveOrderAmount        = 500
-	testNegativeOrderAmount        = -500
-	testZeroOrderAmount            = 0
+	testPositiveAmount             = 500
+	testNegativeAmount             = -500
+	testZeroAmount                 = 0
 )
 
 var (
-	errTestIssueToken        = errors.New("issue token failed")
-	errTestLoadOrder         = errors.New("load order failed")
-	errTestListOrders        = errors.New("list orders failed")
-	errTestGetBalance        = errors.New("get balance failed")
-	errTestListWithdrawals   = errors.New("list withdrawals failed")
-	errTestWithdraw          = errors.New("withdraw failed")
+	errIssueToken            = errors.New("issue token failed")
+	errLoadOrder             = errors.New("load order failed")
+	errListOrders            = errors.New("list orders failed")
+	errGetBalance            = errors.New("get balance failed")
+	errListWithdrawals       = errors.New("list withdrawals failed")
+	errWithdraw              = errors.New("withdraw failed")
 	testFixedTimestamp       = time.Date(1993, time.August, 22, 0, 0, 0, 0, time.Local)
 	testEmptyOrderResponses  = []model.OrderResponse{}
 	testSingleOrderResponses = []model.OrderResponse{
 		{
 			OrderNumber:  testValidOrderNumber,
 			Status:       model.StatusProcessed,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 	}
@@ -49,39 +49,39 @@ var (
 		{
 			OrderNumber:  testValidOrderNumber,
 			Status:       model.StatusProcessed,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:  testAnotherValidOrderNumber,
 			Status:       model.StatusProcessing,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:  testYetAnotherValidOrderNumber,
 			Status:       model.StatusNew,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 	}
-	expectedThreeOrderResponses = []model.OrderResponse{
+	testWantThreeOrderResponses = []model.OrderResponse{
 		{
 			OrderNumber:  testValidOrderNumber,
 			Status:       model.StatusProcessed,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:  testAnotherValidOrderNumber,
 			Status:       model.StatusProcessing,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:  testYetAnotherValidOrderNumber,
 			Status:       model.StatusNew,
-			Amount:       testPositiveOrderAmount,
+			Amount:       testPositiveAmount,
 			UploadedTime: testFixedTimestamp,
 		},
 	}
@@ -90,7 +90,7 @@ var (
 		Current:   500.00,
 		Withdrawn: 1500.00,
 	}
-	expectedNonZeroBalance = model.BalanceResponse{
+	testWantNonZeroBalance = model.BalanceResponse{
 		Current:   500.00,
 		Withdrawn: 1500.00,
 	}
@@ -99,34 +99,34 @@ var (
 	testNonEmptyWithdrawals = []model.WithdrawalResponse{
 		{
 			OrderNumber:   testValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
+			Amount:        testPositiveAmount,
 			ProcessedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:   testAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
+			Amount:        testPositiveAmount,
 			ProcessedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:   testYetAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
+			Amount:        testPositiveAmount,
 			ProcessedTime: testFixedTimestamp,
 		},
 	}
-	expectedNonEmptyWithdrawals = []model.WithdrawalResponse{
+	testWantNonEmptyWithdrawals = []model.WithdrawalResponse{
 		{
 			OrderNumber:   testValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
+			Amount:        testPositiveAmount,
 			ProcessedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:   testAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
+			Amount:        testPositiveAmount,
 			ProcessedTime: testFixedTimestamp,
 		},
 		{
 			OrderNumber:   testYetAnotherValidOrderNumber,
-			Amount:        testPositiveOrderAmount,
+			Amount:        testPositiveAmount,
 			ProcessedTime: testFixedTimestamp,
 		},
 	}

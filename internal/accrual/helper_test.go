@@ -41,8 +41,8 @@ type accrualStub struct {
 }
 
 var (
-	errTestUpdateOrder    = errors.New("update order failed")
-	errTestFetchNewOrders = errors.New("fetch new orders failed")
+	errUpdateOrder    = errors.New("update order failed")
+	errFetchNewOrders = errors.New("fetch new orders failed")
 
 	testSuccessOrderResponse = Order{
 		Order:   testValidOrderNumber,
@@ -105,12 +105,12 @@ func expectUpdateOrder(repo *mocks.MockAccrualRepository, orderNumber string) *g
 		testOrderResponses[orderNumber].Accrual)
 }
 
-func compareErrors(t *testing.T, method string, errGot error, wantErr error) {
+func compareErrors(t *testing.T, method string, got error, wantErr error) {
 	t.Helper()
-	if wantErr != nil && !errors.Is(errGot, wantErr) {
-		t.Errorf("%s error = %v, wantErr %v", method, errGot, wantErr)
+	if wantErr != nil && !errors.Is(got, wantErr) {
+		t.Errorf("%s error = %v, want %v", method, got, wantErr)
 	}
-	if wantErr == nil && !errors.Is(errGot, wantErr) {
-		t.Errorf("%s unexpected error = %v, wantErr %v", method, errGot, wantErr)
+	if wantErr == nil && !errors.Is(got, wantErr) {
+		t.Errorf("%s unexpected error = %v, want %v", method, got, wantErr)
 	}
 }

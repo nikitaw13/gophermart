@@ -33,7 +33,7 @@ func TestValidateWithdrawalAmount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := ValidateWithdrawalAmount(tt.args.amount); !errors.Is(err, tt.wantErr) {
-				t.Errorf("ValidateWithdrawalAmount() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ValidateWithdrawalAmount() error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}

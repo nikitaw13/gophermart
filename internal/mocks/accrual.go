@@ -56,15 +56,15 @@ func (mr *MockAccrualRepositoryMockRecorder) FetchNewOrders(ctx any) *gomock.Cal
 }
 
 // UpdateOrder mocks base method.
-func (m *MockAccrualRepository) UpdateOrder(ctx context.Context, orderNumber, orderStatus string, accrual float64) error {
+func (m *MockAccrualRepository) UpdateOrder(ctx context.Context, orderNumber, status string, accrualAmount float64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOrder", ctx, orderNumber, orderStatus, accrual)
+	ret := m.ctrl.Call(m, "UpdateOrder", ctx, orderNumber, status, accrualAmount)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateOrder indicates an expected call of UpdateOrder.
-func (mr *MockAccrualRepositoryMockRecorder) UpdateOrder(ctx, orderNumber, orderStatus, accrual any) *gomock.Call {
+func (mr *MockAccrualRepositoryMockRecorder) UpdateOrder(ctx, orderNumber, status, accrualAmount any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrder", reflect.TypeOf((*MockAccrualRepository)(nil).UpdateOrder), ctx, orderNumber, orderStatus, accrual)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrder", reflect.TypeOf((*MockAccrualRepository)(nil).UpdateOrder), ctx, orderNumber, status, accrualAmount)
 }

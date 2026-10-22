@@ -10,7 +10,7 @@ type User struct {
 // passwords are capped at 72 bytes because bcrypt rejects longer inputs.
 const maxCredentialLength = 72
 
-// Validate reports whether username and password are non-empty and do not exceed maxCredentialLength.
+// Validate checks that username and password are non-empty and do not exceed maxCredentialLength.
 func (user User) Validate() error {
 	if user.Username == "" {
 		return ErrMissingUsername

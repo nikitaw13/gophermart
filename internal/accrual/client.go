@@ -13,16 +13,16 @@ import (
 
 const maxRetryWaitSeconds int = 60
 
-// accrualClient talks to the loyalty accrual system over HTTP.
-type accrualClient struct {
+// AccrualClient talks to the loyalty accrual system over HTTP.
+type AccrualClient struct {
 	address string
 	client  *http.Client
 	logger  *zap.Logger
 }
 
 // NewAccrualClient creates an HTTP client for the loyalty accrual system at the given address.
-func NewAccrualClient(address string, logger *zap.Logger) *accrualClient {
-	return &accrualClient{
+func NewAccrualClient(address string, logger *zap.Logger) *AccrualClient {
+	return &AccrualClient{
 		address: address,
 		client: &http.Client{
 			Timeout: 5 * time.Second,
@@ -32,7 +32,7 @@ func NewAccrualClient(address string, logger *zap.Logger) *accrualClient {
 }
 
 // GetStatus fetches the current accrual status of the order with the given number.
-func (ac *accrualClient) GetStatus(ctx context.Context, orderNumber string) (Order, error) {
+func (ac *AccrualClient) GetStatus(ctx context.Context, orderNumber string) (Order, error) {
 	var result Order
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/orders/%s", ac.address, orderNumber), nil)
 
@@ -60,7 +60,7 @@ func (ac *accrualClient) GetStatus(ctx context.Context, orderNumber string) (Ord
 		waitTime, err := parseRetryAfterHeader(response)
 		if err != nil {
 			ac.logger.Debug("invalid Retry-After header, using default delay",
-				zap.Error(err), zap.String("orderNumber", orderNumber))
+				zap.Error(err), zap.String("order", orderNumber))
 		}
 		return result, &RetryAfterError{
 			After: waitTime,

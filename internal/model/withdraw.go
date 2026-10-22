@@ -23,7 +23,7 @@ type WithdrawalRegistrationResult struct {
 	Owner    string
 }
 
-// ValidateWithdrawalAmount reports whether the withdrawal amount is positive.
+// ValidateWithdrawalAmount checks that the withdrawal amount is positive.
 func ValidateWithdrawalAmount(amount float64) error {
 	if amount <= 0 {
 		return ErrNonPositiveAmount

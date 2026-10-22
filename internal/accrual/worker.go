@@ -18,9 +18,9 @@ var backoffSchedule = []time.Duration{
 	400 * time.Millisecond,
 }
 
-// accrualWorker periodically polls the accrual system for order status updates.
-type accrualWorker struct {
-	client      *accrualClient
+// AccrualWorker periodically polls the accrual system for order status updates.
+type AccrualWorker struct {
+	client      *AccrualClient
 	repository  AccrualRepository
 	logger      *zap.Logger
 	interval    time.Duration
@@ -30,11 +30,11 @@ type accrualWorker struct {
 }
 
 // NewAccrualWorker creates a worker that polls the accrual system at the given interval.
-func NewAccrualWorker(client *accrualClient, repository AccrualRepository, logger *zap.Logger, workerCount int, interval time.Duration) *accrualWorker {
+func NewAccrualWorker(client *AccrualClient, repository AccrualRepository, logger *zap.Logger, workerCount int, interval time.Duration) *AccrualWorker {
 	if workerCount < 1 {
 		workerCount = 1
 	}
-	return &accrualWorker{
+	return &AccrualWorker{
 		client:      client,
 		repository:  repository,
 		logger:      logger,
@@ -45,13 +45,13 @@ func NewAccrualWorker(client *accrualClient, repository AccrualRepository, logge
 }
 
 // Done returns a channel that is closed once ProcessNewOrders has fully stopped.
-func (aw *accrualWorker) Done() <-chan struct{} {
+func (aw *AccrualWorker) Done() <-chan struct{} {
 	return aw.done
 }
 
 // ProcessNewOrders periodically fetches new orders from the repository
 // and updates their accrual status until the context is cancelled.
-func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
+func (aw *AccrualWorker) ProcessNewOrders(ctx context.Context) error {
 	defer close(aw.done)
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -90,7 +90,7 @@ func (aw *accrualWorker) ProcessNewOrders(ctx context.Context) error {
 	}
 }
 
-func (aw *accrualWorker) consumeJobs(ctx context.Context, orderNumberStream <-chan string) {
+func (aw *AccrualWorker) consumeJobs(ctx context.Context, orderNumberStream <-chan string) {
 	for orderNumber := range orderNumberStream {
 		err := aw.processOrder(ctx, orderNumber)
 		if errors.Is(err, ErrOrderNotRegistered) {
@@ -102,7 +102,7 @@ func (aw *accrualWorker) consumeJobs(ctx context.Context, orderNumberStream <-ch
 	}
 }
 
-func (aw *accrualWorker) processOrder(ctx context.Context, orderNumber string) error {
+func (aw *AccrualWorker) processOrder(ctx context.Context, orderNumber string) error {
 	order, err := aw.getStatusWithRetries(ctx, orderNumber)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (aw *accrualWorker) processOrder(ctx context.Context, orderNumber string) e
 	return nil
 }
 
-func (aw *accrualWorker) getStatusWithRetries(ctx context.Context, orderNumber string) (Order, error) {
+func (aw *AccrualWorker) getStatusWithRetries(ctx context.Context, orderNumber string) (Order, error) {
 	var (
 		lastError error
 		order     Order

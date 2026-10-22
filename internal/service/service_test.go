@@ -29,7 +29,7 @@ func TestLoyaltyService_RegisterUser(t *testing.T) {
 				repo.EXPECT().CreateUser(gomock.Any(), testUsername, gomock.Any()).DoAndReturn(func(ctx context.Context, username, hash string) error {
 					err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(testPassword72Symbols))
 					if err != nil {
-						t.Errorf("CompareHashAndPassword() error = %v, wantErr %v", err, nil)
+						t.Errorf("CompareHashAndPassword() error = %v, want %v", err, nil)
 					}
 					return nil
 				})
@@ -59,10 +59,10 @@ func TestLoyaltyService_RegisterUser(t *testing.T) {
 			user: model.User{Username: testUsername, Password: testPassword72Symbols},
 			setup: func(t *testing.T, repo *mocks.MockRepository, authMgr *mocks.MockAuthManager) {
 				repo.EXPECT().CreateUser(gomock.Any(), testUsername, gomock.Any()).Return(nil)
-				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, errTestIssueToken)
+				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, errIssueToken)
 			},
 			want:    testEmptyToken,
-			wantErr: errTestIssueToken,
+			wantErr: errIssueToken,
 		},
 	}
 	for _, tt := range tests {
@@ -77,13 +77,13 @@ func TestLoyaltyService_RegisterUser(t *testing.T) {
 			gotToken, err := svc.RegisterUser(t.Context(), tt.user)
 
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("svc.RegisterUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("RegisterUser() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("svc.RegisterUser() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("RegisterUser() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 			if gotToken != tt.want {
-				t.Errorf("svc.RegisterUser() = %v, want %v", gotToken, tt.want)
+				t.Errorf("RegisterUser() = %v, want %v", gotToken, tt.want)
 			}
 		})
 	}
@@ -93,7 +93,7 @@ func bcryptHash(t *testing.T, password string) string {
 	t.Helper()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
-		t.Errorf("bcrypt.GenerateFromPassword() error = %v, wantErr %v", err, nil)
+		t.Errorf("bcrypt.GenerateFromPassword() error = %v, want %v", err, nil)
 	}
 	return string(hashedPassword)
 }
@@ -148,10 +148,10 @@ func TestLoyaltyService_LoginUser(t *testing.T) {
 			user: model.User{Username: testUsername, Password: testPassword72Symbols},
 			setup: func(t *testing.T, repo *mocks.MockRepository, authMgr *mocks.MockAuthManager) {
 				repo.EXPECT().GetPasswordHash(gomock.Any(), testUsername).Return(bcryptHash(t, testPassword72Symbols), nil)
-				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, errTestIssueToken)
+				authMgr.EXPECT().IssueToken(testUsername).Return(testEmptyToken, errIssueToken)
 			},
 			want:    testEmptyToken,
-			wantErr: errTestIssueToken,
+			wantErr: errIssueToken,
 		},
 	}
 	for _, tt := range tests {
@@ -166,10 +166,10 @@ func TestLoyaltyService_LoginUser(t *testing.T) {
 			gotToken, err := svc.LoginUser(t.Context(), tt.user)
 
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("LoginUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LoginUser() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("LoginUser() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LoginUser() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 			if gotToken != tt.want {
 				t.Errorf("LoginUser() = %v, want %v", gotToken, tt.want)
@@ -217,10 +217,10 @@ func TestLoyaltyService_IdentifyUser(t *testing.T) {
 			gotUsername, err := svc.IdentifyUser(tt.token)
 
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("IdentifyUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("IdentifyUser() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("IdentifyUser() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("IdentifyUser() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 			if gotUsername != tt.want {
 				t.Errorf("IdentifyUser() = %v, want %v", gotUsername, tt.want)
@@ -284,9 +284,9 @@ func TestLoyaltyService_LoadOrder(t *testing.T) {
 			args: args{orderNumber: testValidOrderNumber, username: testUsername},
 			setup: func(repo *mocks.MockRepository) {
 				result := model.OrderRegistrationResult{Inserted: false, Owner: ""}
-				repo.EXPECT().RegisterOrder(gomock.Any(), testValidOrderNumber, testUsername).Return(result, errTestLoadOrder)
+				repo.EXPECT().RegisterOrder(gomock.Any(), testValidOrderNumber, testUsername).Return(result, errLoadOrder)
 			},
-			wantErr: errTestLoadOrder,
+			wantErr: errLoadOrder,
 		},
 	}
 	for _, tt := range tests {
@@ -301,10 +301,10 @@ func TestLoyaltyService_LoadOrder(t *testing.T) {
 			err := svc.LoadOrder(t.Context(), tt.args.orderNumber, tt.args.username)
 
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("LoadOrder() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LoadOrder() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("LoadOrder() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LoadOrder() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -324,7 +324,7 @@ func TestLoyaltyService_ListOrders(t *testing.T) {
 			setup: func(repo *mocks.MockRepository) {
 				repo.EXPECT().ListOrders(gomock.Any(), testUsername).Return(testThreeOrderResponses, nil)
 			},
-			want:    expectedThreeOrderResponses,
+			want:    testWantThreeOrderResponses,
 			wantErr: nil,
 		},
 		{
@@ -340,10 +340,10 @@ func TestLoyaltyService_ListOrders(t *testing.T) {
 			name:     "List orders failed → error",
 			username: testUsername,
 			setup: func(repo *mocks.MockRepository) {
-				repo.EXPECT().ListOrders(gomock.Any(), testUsername).Return(testSingleOrderResponses, errTestListOrders)
+				repo.EXPECT().ListOrders(gomock.Any(), testUsername).Return(testSingleOrderResponses, errListOrders)
 			},
 			want:    testSingleOrderResponses,
-			wantErr: errTestListOrders,
+			wantErr: errListOrders,
 		},
 	}
 	for _, tt := range tests {
@@ -357,10 +357,10 @@ func TestLoyaltyService_ListOrders(t *testing.T) {
 
 			gotOrders, err := svc.ListOrders(t.Context(), tt.username)
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ListOrders() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ListOrders() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ListOrders() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ListOrders() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(gotOrders, tt.want) {
 				t.Errorf("ListOrders() = %v, want %v", gotOrders, tt.want)
@@ -383,17 +383,17 @@ func TestLoyaltyService_GetBalance(t *testing.T) {
 			setup: func(repo *mocks.MockRepository) {
 				repo.EXPECT().GetBalance(gomock.Any(), testUsername).Return(testNonZeroBalance, nil)
 			},
-			want:    expectedNonZeroBalance,
+			want:    testWantNonZeroBalance,
 			wantErr: nil,
 		},
 		{
 			name:     "Get balance failed → error",
 			username: testUsername,
 			setup: func(repo *mocks.MockRepository) {
-				repo.EXPECT().GetBalance(gomock.Any(), testUsername).Return(testEmptyBalance, errTestGetBalance)
+				repo.EXPECT().GetBalance(gomock.Any(), testUsername).Return(testEmptyBalance, errGetBalance)
 			},
 			want:    testEmptyBalance,
-			wantErr: errTestGetBalance,
+			wantErr: errGetBalance,
 		},
 	}
 	for _, tt := range tests {
@@ -407,10 +407,10 @@ func TestLoyaltyService_GetBalance(t *testing.T) {
 
 			gotBalance, err := svc.GetBalance(t.Context(), tt.username)
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GetBalance() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetBalance() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("GetBalance() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetBalance() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(gotBalance, tt.want) {
 				t.Errorf("GetBalance() = %v, want %v", gotBalance, tt.want)
@@ -434,10 +434,10 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Valid order number, positive balance → ok",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup: func(repo *mocks.MockRepository) {
-				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveOrderAmount}
+				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveAmount}
 				result := model.WithdrawalRegistrationResult{Inserted: true, Owner: testUsername}
 				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, nil)
 			},
@@ -447,7 +447,7 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Invalid order number → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testInvalidOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup:   func(repo *mocks.MockRepository) {},
 			wantErr: model.ErrInvalidOrderNumber,
@@ -456,7 +456,7 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Empty order number → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testEmptyOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup:   func(repo *mocks.MockRepository) {},
 			wantErr: model.ErrMissingOrderNumber,
@@ -465,10 +465,10 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Valid order number, insufficient funds → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup: func(repo *mocks.MockRepository) {
-				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveOrderAmount}
+				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveAmount}
 				result := model.WithdrawalRegistrationResult{Inserted: false, Owner: testEmptyUsername}
 				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, model.ErrInsufficientFunds)
 			},
@@ -478,7 +478,7 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Valid order number, negative amount → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testNegativeOrderAmount,
+				Amount:      testNegativeAmount,
 			}},
 			setup:   func(repo *mocks.MockRepository) {},
 			wantErr: model.ErrNonPositiveAmount,
@@ -487,7 +487,7 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Valid order number, zero amount → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testZeroOrderAmount,
+				Amount:      testZeroAmount,
 			}},
 			setup:   func(repo *mocks.MockRepository) {},
 			wantErr: model.ErrNonPositiveAmount,
@@ -496,10 +496,10 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Withdrawal already exists, same owner → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup: func(repo *mocks.MockRepository) {
-				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveOrderAmount}
+				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveAmount}
 				result := model.WithdrawalRegistrationResult{Inserted: false, Owner: testUsername}
 				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, nil)
 			},
@@ -509,10 +509,10 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Withdrawal already exists, different owner → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup: func(repo *mocks.MockRepository) {
-				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveOrderAmount}
+				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveAmount}
 				result := model.WithdrawalRegistrationResult{Inserted: false, Owner: testAnotherUsername}
 				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, nil)
 			},
@@ -522,14 +522,14 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			name: "Withdrawal failed → error",
 			args: args{username: testUsername, withdrawal: model.WithdrawalRequest{
 				OrderNumber: testValidOrderNumber,
-				Amount:      testPositiveOrderAmount,
+				Amount:      testPositiveAmount,
 			}},
 			setup: func(repo *mocks.MockRepository) {
-				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveOrderAmount}
+				request := model.WithdrawalRequest{OrderNumber: testValidOrderNumber, Amount: testPositiveAmount}
 				result := model.WithdrawalRegistrationResult{Inserted: false, Owner: testEmptyUsername}
-				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, errTestWithdraw)
+				repo.EXPECT().Withdraw(gomock.Any(), testUsername, request).Return(result, errWithdraw)
 			},
-			wantErr: errTestWithdraw,
+			wantErr: errWithdraw,
 		},
 	}
 	for _, tt := range tests {
@@ -544,10 +544,10 @@ func TestLoyaltyService_Withdraw(t *testing.T) {
 			err := svc.Withdraw(t.Context(), tt.args.username, tt.args.withdrawal)
 
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("Withdraw() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Withdraw() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("Withdraw() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Withdraw() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -567,7 +567,7 @@ func TestLoyaltyService_ListWithdrawals(t *testing.T) {
 			setup: func(repo *mocks.MockRepository) {
 				repo.EXPECT().ListWithdrawals(gomock.Any(), testUsername).Return(testNonEmptyWithdrawals, nil)
 			},
-			want:    expectedNonEmptyWithdrawals,
+			want:    testWantNonEmptyWithdrawals,
 			wantErr: nil,
 		},
 		{
@@ -583,10 +583,10 @@ func TestLoyaltyService_ListWithdrawals(t *testing.T) {
 			name:     "List withdrawals failed → error",
 			username: testUsername,
 			setup: func(repo *mocks.MockRepository) {
-				repo.EXPECT().ListWithdrawals(gomock.Any(), testUsername).Return(testEmptyWithdrawals, errTestListWithdrawals)
+				repo.EXPECT().ListWithdrawals(gomock.Any(), testUsername).Return(testEmptyWithdrawals, errListWithdrawals)
 			},
 			want:    testEmptyWithdrawals,
-			wantErr: errTestListWithdrawals,
+			wantErr: errListWithdrawals,
 		},
 	}
 	for _, tt := range tests {
@@ -601,10 +601,10 @@ func TestLoyaltyService_ListWithdrawals(t *testing.T) {
 			gotWithdrawals, err := svc.ListWithdrawals(t.Context(), tt.username)
 
 			if tt.wantErr != nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ListWithdrawals() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ListWithdrawals() error = %v, want %v", err, tt.wantErr)
 			}
 			if tt.wantErr == nil && !errors.Is(err, tt.wantErr) {
-				t.Errorf("ListWithdrawals() unexpected error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ListWithdrawals() unexpected error = %v, want %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(gotWithdrawals, tt.want) {
 				t.Errorf("ListWithdrawals() = %v, want %v", gotWithdrawals, tt.want)

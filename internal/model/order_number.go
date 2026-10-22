@@ -1,6 +1,6 @@
 package model
 
-// ValidateOrderNumber reports whether the order number is non-empty and passes the Luhn check.
+// ValidateOrderNumber checks that the order number is non-empty and passes the Luhn check.
 func ValidateOrderNumber(number string) error {
 	if number == "" {
 		return ErrMissingOrderNumber

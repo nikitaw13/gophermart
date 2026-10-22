@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Test_accrualClient_GetStatus(t *testing.T) {
+func Test_AccrualClient_GetStatus(t *testing.T) {
 	tests := []struct {
 		name           string
 		httpStatus     int
@@ -34,7 +34,7 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 			wantErr:     nil,
 		},
 		{
-			name:        "Order is not registered → ok",
+			name:        "Order is not registered → error",
 			httpStatus:  http.StatusNoContent,
 			respErr:     nil,
 			orderNumber: testValidOrderNumber,
@@ -119,20 +119,20 @@ func Test_accrualClient_GetStatus(t *testing.T) {
 			if tt.wantRetryAfter != 0 {
 				ok := errors.As(err, &retryAfterErr)
 				if ok && retryAfterErr.After != tt.wantRetryAfter {
-					t.Errorf("got = %v, want = %v", retryAfterErr.After, tt.wantRetryAfter)
+					t.Errorf("GetStatus().RetryAfter.After = %v, want %v", retryAfterErr.After, tt.wantRetryAfter)
 				}
 				if !ok {
-					t.Errorf("got = %v, want = *RetryAfterError", err)
+					t.Errorf("GetStatus() error = %v, want *RetryAfterError", err)
 				}
 			}
 			if !reflect.DeepEqual(gotOrder, tt.want) {
-				t.Errorf("accrualClient.GetStatus() = %v, want %v", gotOrder, tt.want)
+				t.Errorf("AccrualClient.GetStatus() = %v, want %v", gotOrder, tt.want)
 			}
 		})
 	}
 }
 
-func Test_accrualClient_GetStatus_canceledContext(t *testing.T) {
+func Test_AccrualClient_GetStatus_canceledContext(t *testing.T) {
 	tests := []struct {
 		name        string
 		orderNumber string
