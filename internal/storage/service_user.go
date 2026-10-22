@@ -1,0 +1,54 @@
+package storage
+
+// User account storage: registration and credential lookup.
+
+import (
+	"context"
+	"errors"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/nikitaw13/gophermart/internal/model"
+)
+
+// CreateUser inserts a new user with the given username and password hash.
+func (ps *PostgresStorage) CreateUser(ctx context.Context, username string, passwordHash string) error {
+	var pgErr *pgconn.PgError
+	operation := func() error {
+		_, err := ps.db.Exec(ctx, insertUserTemplate, username, passwordHash)
+		return err
+	}
+
+	err := ps.withRetries(ctx, operation)
+
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		return model.ErrUserAlreadyExists
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetPasswordHash returns the stored password hash for the given username, or model.ErrUserNotFound.
+func (ps *PostgresStorage) GetPasswordHash(ctx context.Context, username string) (string, error) {
+	var passwordHash string
+
+	operation := func() error {
+		err := ps.db.QueryRow(ctx, getPasswordHashTemplate, username).Scan(&passwordHash)
+		return err
+	}
+
+	err := ps.withRetries(ctx, operation)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", model.ErrUserNotFound
+	}
+	if err != nil {
+		return "", err
+	}
+	return passwordHash, nil
+}
