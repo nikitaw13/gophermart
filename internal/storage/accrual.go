@@ -39,10 +39,10 @@ func (ps *PostgresStorage) FetchNewOrders(ctx context.Context) ([]string, error)
 }
 
 // UpdateOrder persists the accrual status and accrued amount of the order.
-func (ps *PostgresStorage) UpdateOrder(ctx context.Context, orderNumber string, orderStatus string, accrual float64) error {
+func (ps *PostgresStorage) UpdateOrder(ctx context.Context, orderNumber string, status string, accrualAmount float64) error {
 	operation := func() error {
-		_, err := ps.db.Exec(ctx, updateOrderStatusTemplate, orderNumber, orderStatus,
-			accrual, model.StatusProcessed, model.StatusInvalid)
+		_, err := ps.db.Exec(ctx, updateOrderTemplate, orderNumber, status,
+			accrualAmount, model.StatusProcessed, model.StatusInvalid)
 		return err
 	}
 

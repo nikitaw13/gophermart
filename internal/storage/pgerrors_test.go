@@ -9,9 +9,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-var errUnknownTest = errors.New("GopherTestUnknownError")
+var errUnknown = errors.New("GopherTestUnknownError")
 
-const unknownTestPgError = "99999"
+const unknownPgErrCode = "99999"
 
 func TestPostgresErrorClassifier_Classify(t *testing.T) {
 	type args struct {
@@ -29,12 +29,12 @@ func TestPostgresErrorClassifier_Classify(t *testing.T) {
 		},
 		{
 			name: "Unknown error → NonRetriable",
-			args: args{err: errUnknownTest},
+			args: args{err: errUnknown},
 			want: NonRetriable,
 		},
 		{
 			name: "Unknown PgError → NonRetriable",
-			args: args{err: &pgconn.PgError{Code: unknownTestPgError}},
+			args: args{err: &pgconn.PgError{Code: unknownPgErrCode}},
 			want: NonRetriable,
 		},
 		{

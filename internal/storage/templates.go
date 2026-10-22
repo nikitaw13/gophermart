@@ -102,7 +102,7 @@ var (
 	WHERE status IN ($1, $2)
 	`, accrualsTableName)
 
-	updateOrderStatusTemplate = fmt.Sprintf(`
+	updateOrderTemplate = fmt.Sprintf(`
 	UPDATE %s
 	SET status = $2, amount = $3
 	WHERE order_number = $1
