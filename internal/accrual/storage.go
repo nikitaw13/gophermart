@@ -1,0 +1,11 @@
+package accrual
+
+import (
+	"context"
+)
+
+// AccrualRepository is the storage interface consumed by accrualWorker.
+type AccrualRepository interface {
+	FetchNewOrders(ctx context.Context) ([]string, error)
+	UpdateOrder(ctx context.Context, orderNumber string, status string, accrualAmount float64) error
+}
